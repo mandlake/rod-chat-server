@@ -18,7 +18,7 @@ export default function Home() {
   } = useForm<Inputs>();
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     console.log("입력된 값 : " + JSON.stringify(data));
-    fetch("http://localhost:8000/chat", {
+    fetch("http://localhost:8000/titanic", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -48,7 +48,6 @@ export default function Home() {
           >
             <input
               className="bg-slate-700 w-[708px] h-[40px] text-slate-300 pr-[60px]"
-              defaultValue="test"
               {...register("question")}
             />
             <button
