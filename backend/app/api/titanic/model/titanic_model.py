@@ -2,12 +2,14 @@ from dataclasses import dataclass
 
 @dataclass
 class TitanicModel :
-    context: str
-    frame: str
-    train: object
-    test: object
-    id: str
-    label: str
+    _context: str = ""
+    _fname: str = ""
+    _train: object = None
+    _test: object = None
+    _id: str = ""
+    _label: str = ""
+    
+    # dataclass에 getter, setter는 필요없다.
     
     @property
     def context(self) -> str: return self._context

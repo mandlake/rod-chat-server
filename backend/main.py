@@ -19,10 +19,7 @@ class Request(BaseModel):
 class Response(BaseModel):
     answer: str
 
-
 app = FastAPI()
-
-app.include_router(m_router)
 
 origins = ['*']
 
@@ -34,21 +31,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(m_router, prefix="/api")
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/api/chat")
+@app.post("/chat")
 def chatting(req:Request):
     print('딕셔너리 내용')
     print(req)
  
     chat = ChatOpenAI(
         openai_api_key=os.environ["api_key"],
-        temperature=0.1,               # 창의성 (0.0 ~ 2.0) 
-        max_tokens=2048,             # 최대 토큰수
-        model_name='gpt-3.5-turbo-0613',  # 모델명
+        temperature=0.1,                    # 창의성 (0.0 ~ 2.0) 
+        max_tokens=2048,                    # 최대 토큰수
+        model_name='gpt-3.5-turbo-0613',    # 모델명
         )
 
     print(f'{chat.predict(req.question)}')
