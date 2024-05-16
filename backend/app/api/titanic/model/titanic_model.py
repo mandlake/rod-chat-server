@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import icecream as ic
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold, cross_val_score
 from app.api.domain.data_sets import DataSets
 from app.api.domain.models import models
 
@@ -27,21 +29,22 @@ class TitanicModel(object) :
         title_mapping = self.remove_duplicate_title(this)
         this = self.name_nominal(this, title_mapping)
         this = self.drop_feature(this, 'Name')
-        self.df_info(this)
         
         this = self.sex_nominal(this)
-        this = self.drop_feature(this, 'Sex')
+        this = self.pclass_ordinal(this)
         
         this = self.age_ratio(this)
         this = self.drop_feature(this, 'Age')
         
         this = self.fare_ratio(this)
         this = self.drop_feature(this, 'Fare')
+        
+        this = self.embarked_nominal(this)
         self.df_info(this)
         
         k_fold = self.create_k_fold()
-        accuracy = self.create_accuracy(this, k_fold)
-        ic(accuracy)
+        accurancy = self.get_accurancy(this, k_fold)
+        ic(accurancy)
         
         return this
     
@@ -102,7 +105,7 @@ class TitanicModel(object) :
             i['Title'] = i['Title'].replace('Mlle', 'Miss')
             i['Title'] = i['Title'].replace('Ms', 'Miss')
             i['Title'] = i['Title'].replace('Mme', 'Mrs')
-            i['Title'] = i['Title'].fillna(0)
+            i['Title'] = i['Title'].fillna(-0.5)
             i['Title'] = i['Title'].map(title_mapping)
         
         return this
@@ -110,7 +113,15 @@ class TitanicModel(object) :
     @staticmethod
     def sex_nominal(this) -> pd.DataFrame:
         for i in [this.train, this.test]:
-            i['SexGroup'] = i['Sex'].map({'male': 0, 'female': 1})
+            i['Sex'] = i['Sex'].fillna(-0.5)
+            i['Sex'] = i['Sex'].map({'male': 0, 'female': 1})
+        
+        return this
+    
+    @staticmethod
+    def pclass_ordinal(this) -> pd.DataFrame:
+        for i in [this.train, this.test]:
+            i['Pclass'] = i['Pclass'].fillna(-0.5)
         
         return this
 
@@ -143,7 +154,7 @@ class TitanicModel(object) :
         
         for i in [train, test]:
             i['Fare'] = pd.cut(i['Fare'], bins=bins, labels=labels)
-            i['FareGroup'] = i['Fare'].map(fare_mapping)
+            i['FareBand'] = i['Fare'].map(fare_mapping)
         
         return this
     
@@ -157,8 +168,18 @@ class TitanicModel(object) :
     
     @staticmethod
     def create_k_fold() -> object:
-        return 0
+        return KFold(n_splits=10, shuffle=True, random_state=0)
+
+    @staticmethod
+    def learning(self, train_fname, test_fname) -> object:
+        this = self.preprocess(train_fname, test_fname)
+        print(f'학습 시작')
+        k_fold = self.create_k_fold()
+        accuracy = self.create_accuracy(this, k_fold)
+        ic(f'사이킷런 알고리즘 정확도 : {accuracy}')
+        return accuracy
     
     @staticmethod
-    def create_accuracy(this, k_fold) -> object:
-        return 0
+    def get_accurancy(this, k_fold) -> object:
+        score = cross_val_score(RandomForestClassifier(), this.train, this.label, cv=k_fold, n_jobs=-1, scoring='accuracy')
+        return score
