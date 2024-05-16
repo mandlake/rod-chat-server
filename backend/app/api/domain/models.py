@@ -16,7 +16,7 @@ class models :
         this = self.ds
         return pd.read_csv(f'{this.dname}{fname}')
     
-    def save_model(self, fname, dfname: pd.DataFrame) -> pd.DataFrame:
+    def save_model(self, fname, dframe: pd.DataFrame) -> pd.DataFrame:
         this = self.ds
         '''
         풀옵션은 다음과 같다.
@@ -25,4 +25,4 @@ class models :
                          columns=['ID', 'X2'],  # columns to write
                          index=False)  # do not write index
         '''
-        this.train.to_csv(f'{this.sname}{fname}', sep=',', na_rep='NaN')
+        return dframe.to_csv(f'{this.sname}{fname}', sep=',', na_rep='NaN')
