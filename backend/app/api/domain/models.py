@@ -5,19 +5,18 @@ class models :
     def __init__(self) -> None:
         self.ds = DataSets()
         this = self.ds
-        this.dname = './data'
-        this.sname = './save'
+        this.dname = './app/api/titanic/data/'
+        this.sname = './app/api/titanic/save/'
         
-    def new_model(self, payload) -> object:
+    def new_dataframe_with_index(self, fname: pd.DataFrame) -> pd.DataFrame:
         this = self.ds
-        this.fname = payload
-        return pd.read_csv(f'{this.dname}{this.fname}', index_col=0)
+        return pd.read_csv(f'{this.dname}{fname}', index_col=0)
     
-    def new_dframe(self, fname) -> object:
+    def new_dataframe_no_index(self, fname: pd.DataFrame) -> pd.DataFrame:
         this = self.ds
-        return pd.DataFrame(f'{this.dname}{fname}')
+        return pd.read_csv(f'{this.dname}{fname}')
     
-    def save_model(self, fname, dfname) -> object:
+    def save_model(self, fname, dfname: pd.DataFrame) -> pd.DataFrame:
         this = self.ds
         '''
         풀옵션은 다음과 같다.

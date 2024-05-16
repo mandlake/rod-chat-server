@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import icecream as ic
 from app.api.domain.data_sets import DataSets
 from app.api.domain.models import models
 
@@ -8,36 +9,54 @@ class TitanicModel(object) :
     dataset = DataSets()
     
     def preprocess(self, train_fname, test_fname) -> object:
-        this = self.model
-        that = self.dataset
-        this.ds.train = self.model.new_model(train_fname)
-        this.ds.test = self.model.new_model(test_fname)
+        this = self.dataset
+        that = self.model
         feature = ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age', 'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
-        
         # 데이터셋은 Train, Test, Validation 3종류로 분류
-        this.train = that.new_dframe(train_fname)
-        this.test = that.new_dframe(test_fname)
+        this.train = that.new_dataframe_no_index(train_fname)
+        print(f'트레인셋: {this.train.columns}')
+        this.test = that.new_dataframe_no_index(test_fname)
+        print(f'테스트셋: {this.test.columns}')
         this.id = this.test['PassengerId']
         this.label = this.train['Survived']
-        this.train = this.drop_feature(['Survived'], axis=1)
-        this = this.drop_feature(this.train, 'SlbSp', 'Parch', 'Cabin', 'Ticket')
+        this = self.drop_feature(this, 'Survived')
         
-        this = self.name_nominal(this)
+        this = self.drop_feature(this, 'SlbSp', 'Parch', 'Cabin', 'Ticket')
+        
+        this = self.extract_title_from_name(this)
+        title_mapping = self.remove_duplicate_title(this)
+        this = self.name_nominal(this, title_mapping)
         this = self.drop_feature(this, 'Name')
-        
-        this = self.pclass_ordinal(this)
+        self.df_info(this)
         
         this = self.sex_nominal(this)
+        this = self.drop_feature(this, 'Sex')
         
         this = self.age_ratio(this)
         this = self.drop_feature(this, 'Age')
         
         this = self.fare_ratio(this)
         this = self.drop_feature(this, 'Fare')
+        self.df_info(this)
         
-        this = self.embarked_nominal(this)
+        k_fold = self.create_k_fold()
+        accuracy = self.create_accuracy(this, k_fold)
+        ic(accuracy)
         
         return this
+    
+    def df_info(self, this):
+        print('='*50)
+        print(f'1. Train 의 type 은 {type(this.train)} 이다.')
+        print(f'2. Train 의 column 은 {this.train.columns} 이다.')
+        print(f'3. Train 의 상위 1개의 데이터는 {this.train.head()} 이다.')
+        print(f'4. Train 의 null 의 갯수는 {this.train.isnull().sum()} 이다.')
+        print(f'5. Test 의 type 은 {type(this.test)} 이다.')
+        print(f'6. Test 의 column 은 {this.test.columns} 이다.')
+        print(f'7. Test 의 상위 1개의 데이터는 {this.test.head()} 이다.')
+        print(f'8. Test 의 null 의 갯수는 {this.test.isnull().sum()} 이다.')
+        print('='*50)
+        
     
     @staticmethod
     def drop_feature(this, *feature) -> object:
@@ -91,7 +110,7 @@ class TitanicModel(object) :
     @staticmethod
     def sex_nominal(this) -> pd.DataFrame:
         for i in [this.train, this.test]:
-            i['Sex'] = i['Sex'].map({'male': 0, 'female': 1})
+            i['SexGroup'] = i['Sex'].map({'male': 0, 'female': 1})
         
         return this
 
@@ -135,3 +154,11 @@ class TitanicModel(object) :
             i['Embarked'] = i['Embarked'].map({'S': 0, 'C': 1, 'Q': 2})
         
         return this
+    
+    @staticmethod
+    def create_k_fold() -> object:
+        return 0
+    
+    @staticmethod
+    def create_accuracy(this, k_fold) -> object:
+        return 0
