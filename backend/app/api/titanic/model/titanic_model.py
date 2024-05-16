@@ -31,6 +31,8 @@ class TitanicModel(object) :
         this = self.drop_feature(this, 'Name')
         
         this = self.sex_nominal(this)
+        this = self.drop_feature(this, 'Sex')
+        
         this = self.pclass_ordinal(this)
         
         this = self.age_ratio(this)
@@ -41,10 +43,6 @@ class TitanicModel(object) :
         
         this = self.embarked_nominal(this)
         self.df_info(this)
-        
-        k_fold = self.create_k_fold()
-        accurancy = self.get_accurancy(this, k_fold)
-        ic(accurancy)
         
         return this
     
@@ -100,11 +98,10 @@ class TitanicModel(object) :
     @staticmethod
     def name_nominal(this, title_mapping) -> pd.DataFrame:
         for i in [this.train, this.test]:
-            i['Title'] = i['Title'].replace(['Capt', 'Col', 'Don', 'Dr', 'Major', 'Rev', 'Jonkheer', 'Dona'], 'Rare')
+            i['Title'] = i['Title'].replace(['Capt','Col','Don','Dr','Major','Rev','Jonkheer','Dona','Mme'], 'Rare')
             i['Title'] = i['Title'].replace(['Countess', 'Lady', 'Sir'], 'Royal')
-            i['Title'] = i['Title'].replace('Mlle', 'Miss')
-            i['Title'] = i['Title'].replace('Ms', 'Miss')
-            i['Title'] = i['Title'].replace('Mme', 'Mrs')
+            i['Title'] = i['Title'].replace(['Mlle'], 'Mr')
+            i['Title'] = i['Title'].replace(['Miss'], 'Ms')
             i['Title'] = i['Title'].fillna(-0.5)
             i['Title'] = i['Title'].map(title_mapping)
         
@@ -114,7 +111,7 @@ class TitanicModel(object) :
     def sex_nominal(this) -> pd.DataFrame:
         for i in [this.train, this.test]:
             i['Sex'] = i['Sex'].fillna(-0.5)
-            i['Sex'] = i['Sex'].map({'male': 0, 'female': 1})
+            i['Gender'] = i['Sex'].map({'male': 0, 'female': 1})
         
         return this
     
@@ -160,26 +157,26 @@ class TitanicModel(object) :
     
     @staticmethod
     def embarked_nominal(this) -> pd.DataFrame:
-        for i in [this.train, this.test]:
-            i['Embarked'] = i['Embarked'].fillna(-0.5)
-            i['Embarked'] = i['Embarked'].map({'S': 0, 'C': 1, 'Q': 2})
-        
+        this.train['Embarked'] = this.train['Embarked'].fillna('S')
+        this.test['Embarked'] = this.test['Embarked'].fillna('S')
+        this.train['Embarked'] = this.train['Embarked'].map({'S':1, 'C':2, 'Q':3})
+        this.test['Embarked'] = this.test['Embarked'].map({'S':1, 'C':2, 'Q':3})
         return this
     
     @staticmethod
     def create_k_fold() -> object:
         return KFold(n_splits=10, shuffle=True, random_state=0)
-
-    @staticmethod
-    def learning(self, train_fname, test_fname) -> object:
-        this = self.preprocess(train_fname, test_fname)
-        print(f'학습 시작')
-        k_fold = self.create_k_fold()
-        accuracy = self.create_accuracy(this, k_fold)
-        ic(f'사이킷런 알고리즘 정확도 : {accuracy}')
-        return accuracy
     
     @staticmethod
     def get_accurancy(this, k_fold) -> object:
         score = cross_val_score(RandomForestClassifier(), this.train, this.label, cv=k_fold, n_jobs=-1, scoring='accuracy')
         return score
+
+    @staticmethod
+    def learning(self, train_fname, test_fname) -> pd.DataFrame:
+        this = self.preprocess(train_fname, test_fname)
+        print(f'학습 시작')
+        k_fold = self.create_k_fold()
+        accuracy = self.get_accurancy(this, k_fold)
+        print(f'사이킷런 알고리즘 정확도 : {accuracy}') 
+        return accuracy

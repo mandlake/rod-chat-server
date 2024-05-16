@@ -14,7 +14,7 @@ class Response(BaseModel):
 @router.post("/titanic")
 async def titanic(req: Request):
     print("타이타닉 딕셔너리 내용")
-    service.preprocess()
+    service.modeling()
     print(req)
     return Response(answer="생존자는 100명입니다.")
 

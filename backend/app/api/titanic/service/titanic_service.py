@@ -13,13 +13,15 @@ class TitanicService:
     def modeling(self):
         print('모델링 시작')
         this = self.model
-        print(f'모델링 결과: {this}')
+        result = this.learning(this, 'train.csv', 'test.csv')
+        print(f'모델링 결과: {result}')
         
-        return this
+        return result
     
     def learning(self):
         print('러닝 시작')
         this = self.model
+        result = self.modeling()
         print(f'결정트리를 활용한 검증 정확도: {this}')
         print(f'랜덤포레스트를 활용한 검증 정확도: {this}')
         print(f'나이브베이즈를 활용한 검증 정확도: {this}')
