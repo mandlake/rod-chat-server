@@ -1,48 +1,137 @@
-from dataclasses import dataclass
+import numpy as np
+import pandas as pd
+from app.api.domain.data_sets import DataSets
+from app.api.domain.models import models
 
-@dataclass
-class TitanicModel :
-    _context: str = ""
-    _fname: str = ""
-    _train: object = None
-    _test: object = None
-    _id: str = ""
-    _label: str = ""
+class TitanicModel(object) :
+    model = models()
+    dataset = DataSets()
     
-    # dataclass에 getter, setter는 필요없다.
+    def preprocess(self, train_fname, test_fname) -> object:
+        this = self.model
+        that = self.dataset
+        this.ds.train = self.model.new_model(train_fname)
+        this.ds.test = self.model.new_model(test_fname)
+        feature = ['PassengerId', 'Survived', 'Pclass', 'Name', 'Sex', 'Age', 'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked']
+        
+        # 데이터셋은 Train, Test, Validation 3종류로 분류
+        this.train = that.new_dframe(train_fname)
+        this.test = that.new_dframe(test_fname)
+        this.id = this.test['PassengerId']
+        this.label = this.train['Survived']
+        this.train = this.drop_feature(['Survived'], axis=1)
+        this = this.drop_feature(this.train, 'SlbSp', 'Parch', 'Cabin', 'Ticket')
+        
+        this = self.name_nominal(this)
+        this = self.drop_feature(this, 'Name')
+        
+        this = self.pclass_ordinal(this)
+        
+        this = self.sex_nominal(this)
+        
+        this = self.age_ratio(this)
+        this = self.drop_feature(this, 'Age')
+        
+        this = self.fare_ratio(this)
+        this = self.drop_feature(this, 'Fare')
+        
+        this = self.embarked_nominal(this)
+        
+        return this
     
-    @property
-    def context(self) -> str: return self._context
+    @staticmethod
+    def drop_feature(this, *feature) -> object:
+        [(i.drop(j, axis=1, inplace=True)) for j in feature for i in [this.train, this.test] if j in i.columns]
+        
+        return this
     
-    @context.setter
-    def context(self, context): self._context = context
+    @staticmethod
+    def extract_title_from_name(this) -> pd.DataFrame:
+        combine = [this.train, this.test]
+        for i in combine:
+            i['Title'] = i.Name.str.extract('([A-Za-z]+)\.', expand=False)
+        return this
     
-    @property
-    def fname(self) -> str: return self._fname
+    @staticmethod
+    def remove_duplicate_title(this) -> pd.DataFrame:
+        a = []
+        for these in [this.train, this.test]:
+            a += list(set(these['Title']))
+        a = list(set(a))
+        
+        print(a)
+        '''
+        ['Mr', 'Sir', 'Major', 'Don', 'Rev', 'Countess', 'Lady', 'Jonkheer', 'Dr',
+        'Miss', 'Col', 'Ms', 'Dona', 'Mlle', 'Mme', 'Mrs', 'Master', 'Capt']
+        Royal : ['Countess', 'Lady', 'Sir']
+        Rare : ['Capt','Col','Don','Dr','Major','Rev','Jonkheer','Dona','Mme' ]
+        Mr : ['Mlle']
+        Ms : ['Miss']
+        Master
+        Mrs
+        '''
+        
+        title_mapping = {'Mr': 1, 'Ms': 2, 'Mrs': 3, 'Master': 4, 'Royal': 5, 'Rare': 6}
+        
+        return title_mapping
     
-    @fname.setter
-    def fname(self, fname): self._fname = fname
+    @staticmethod
+    def name_nominal(this, title_mapping) -> pd.DataFrame:
+        for i in [this.train, this.test]:
+            i['Title'] = i['Title'].replace(['Capt', 'Col', 'Don', 'Dr', 'Major', 'Rev', 'Jonkheer', 'Dona'], 'Rare')
+            i['Title'] = i['Title'].replace(['Countess', 'Lady', 'Sir'], 'Royal')
+            i['Title'] = i['Title'].replace('Mlle', 'Miss')
+            i['Title'] = i['Title'].replace('Ms', 'Miss')
+            i['Title'] = i['Title'].replace('Mme', 'Mrs')
+            i['Title'] = i['Title'].fillna(0)
+            i['Title'] = i['Title'].map(title_mapping)
+        
+        return this
     
-    @property
-    def train(self) -> object: return self._train
+    @staticmethod
+    def sex_nominal(this) -> pd.DataFrame:
+        for i in [this.train, this.test]:
+            i['Sex'] = i['Sex'].map({'male': 0, 'female': 1})
+        
+        return this
+
+    @staticmethod
+    def age_ratio(this) -> pd.DataFrame:
+        train = this.train
+        test = this.test
+        age_mapping = {'Unknown': 0, 'Baby': 1, 'Child': 2, 'Teenager': 3, 'Student': 4,
+                       'Young Adult': 5, 'Adult': 6, 'Senior': 7}
+        train['Age'] = train['Age'].fillna(-0.5)
+        test['Age'] = test['Age'].fillna(-0.5)
+        bins = [-1, 0, 5, 12, 18, 24, 35, 60, np.inf]
+        labels = ['Unknown', 'Baby', 'Child', 'Teenager', 'Student', 'Young Adult', 'Adult', 'Senior']
+        
+        for i in [train, test]:
+            i['Age'] = pd.cut(i['Age'], bins=bins, labels=labels)
+            i['AgeGroup'] = i['Age'].map(age_mapping)
+        
+        return this
     
-    @train.setter
-    def train(self, train) : self._train = train
+    @staticmethod
+    def fare_ratio(this) -> pd.DataFrame:
+        train = this.train
+        test = this.test
+        fare_mapping = {'Unknown': 0, '1_quartile': 1, '2_quartile': 2, '3_quartile': 3, '4_quartile': 4}
+        train['Fare'] = train['Fare'].fillna(-0.5)
+        test['Fare'] = test['Fare'].fillna(-0.5)
+        bins = [-1, 0, 8, 15, 31, np.inf]
+        labels = ['Unknown', '1_quartile', '2_quartile', '3_quartile', '4_quartile']
+        
+        for i in [train, test]:
+            i['Fare'] = pd.cut(i['Fare'], bins=bins, labels=labels)
+            i['FareGroup'] = i['Fare'].map(fare_mapping)
+        
+        return this
     
-    @property
-    def test(self) -> object: return self._test
-    
-    @test.setter
-    def test(self, test) : self._test = test
-    
-    @property
-    def id(self) -> str: return self._id
-    
-    @id.setter
-    def id(self, id) : self._id = id
-    
-    @property
-    def label(self) -> str: return self._label
-    
-    @label.setter
-    def label(self, label) : self._label = label
+    @staticmethod
+    def embarked_nominal(this) -> pd.DataFrame:
+        for i in [this.train, this.test]:
+            i['Embarked'] = i['Embarked'].fillna(-0.5)
+            i['Embarked'] = i['Embarked'].map({'S': 0, 'C': 1, 'Q': 2})
+        
+        return this

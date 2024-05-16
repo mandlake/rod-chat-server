@@ -12,7 +12,6 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from app.main_router import router as m_router
 
-
 class Request(BaseModel):
     question: str
 
