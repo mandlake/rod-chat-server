@@ -2,6 +2,7 @@ from example.utils import myRandom, memberlist
 
 
 class Account:
+    BANK_NAME = '비트은행'
     memberlist = memberlist()
 
     def __init__(self) -> None:
@@ -13,10 +14,7 @@ class Account:
         예를들면 123-12-123456 이다.
         금액은 100 ~ 999 사이로 랜덤하게 입금된다. (단위는 만단위로 암묵적으로 판단한다)
         '''
-        self.creat_account_number()
-        print(self.to_string())
-        self.deposit()
-        print(self.to_string())
+        self.bit_bank()
 
     def to_string(self):
         return f'은행 : {self.BANK_NAME}, ' \
@@ -25,54 +23,76 @@ class Account:
                f'금액: {self.money} 만원'
 
 
-    def creat_account_number(self) -> object:
-        self.BANK_NAME = '비트은행'
+    def create_account_number(self) -> object:
         self.name = self.memberlist[myRandom(0, len(memberlist()))]
         self.account_number = f'{myRandom(100, 1000)}-{myRandom(10, 100)}-{myRandom(100000, 1000000)}'
         self.money = myRandom(100, 1000)
         return self
 
     def deposit(self):
-        self.money += myRandom(100, 1000)
-        print(f'계좌번호: {self.account_number} 입금액: {self.money} ')
+        deposit_money = myRandom(100, 1000)
+        self.money += deposit_money
+        print(f'계좌번호: {self.account_number} 입금액: {deposit_money} 남은 금액: {self.money}')
+    
+    def withdraw(self):
+        withdraw_money = myRandom(100, 1000)
+        self.money -= withdraw_money
+        print(f'계좌번호: {self.account_number} 출금액: {withdraw_money} 남은 금액: {self.money} ')
 
     @staticmethod
     def find_account(ls, account_number) -> object:
-        for i, j in enumerate(ls):
-            if j.account_number == account_number:
+        for i, account in enumerate(ls):
+            if account.account_number == account_number:
                 return i
+        return -1
 
     @staticmethod
     def del_account(ls, account_number) -> list:
         idx = Account.find_account(ls, account_number)
-        del ls[idx]
+        if idx != -1:
+            del ls[idx]
         return ls
 
-    @staticmethod
-    def main():
+    def bit_bank(self):
         ls = []
         while 1 :
             menu = input('0.종료 1.계좌개설 2.계좌목록 3.입금 4.출금 5.계좌해지 6.계좌조회')
-            
             if menu == '0':
                 break
             elif menu == '1':
-                ls.append(Account())
+                acc = self.create_account_number()
+                print(f'{self.to_string()} ... 개설되었습니다.')
+                ls.append(acc)
             elif menu == '2':
-                for i in ls:
-                    print(i.to_string())
+                if not ls:
+                    print('계좌 목록이 없습니다.')
+                else:
+                    for account in ls:
+                        print(account.to_string())
             elif menu == '3':
-                account_number = input('입금할 계좌번호')
-                idx = Account.find_account(ls, account_number)
-                ls[idx].deposit()
+                account_number = input('입금할 계좌번호: ')
+                idx = self.find_account(ls, account_number)
+                if idx != -1:
+                    ls[idx].deposit()
+                else:
+                    print('계좌를 찾을 수 없습니다.')
             elif menu == '4':
-                pass
+                account_number = input('출금할 계좌번호: ')
+                idx = self.find_account(ls, account_number)
+                if idx != -1:
+                    ls[idx].withdraw()
+                else:
+                    print('계좌를 찾을 수 없습니다.')
             elif menu == '5':
-                account_number = input('해지할 계좌번호')
-                ls = Account.del_account(ls, account_number)
+                account_number = input('해지할 계좌번호: ')
+                ls = self.del_account(ls, account_number)
             elif menu == '6':
-                account_number = input('조회할 계좌번호')
-                print(ls[Account.find_account(ls, account_number)].to_string())
+                account_number = input('조회할 계좌번호: ')
+                idx = self.find_account(ls, account_number)
+                if idx != -1:
+                    print(ls[idx].to_string())
+                else:
+                    print('계좌를 찾을 수 없습니다.')
             else:
                 print('잘못된 메뉴입니다.')
                 continue
