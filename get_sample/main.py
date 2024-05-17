@@ -7,6 +7,7 @@ from example.calculator import Calculator
 from example.dice import Dice
 from example.grade import Grade
 from example.leap_year import LeapYear
+from example.rps import RPS
 
 app = FastAPI()
 
@@ -17,6 +18,8 @@ async def root():
     BMI()
     print('=====================')
     LeapYear()
+    print('=====================')
+    RPS()
     print('=====================')
     Dice()
     print('=====================')
