@@ -1,9 +1,11 @@
-from example.utils import memberlist, myRandom
+from example.utils import myRandom, memberlist
 
 
 class Account:
-    random = myRandom()
-    member = memberlist()
+    BANK_NAME = '비트은행'
+    name = ''
+    account_number = ''
+    money = 0
 
     def __init__(self) -> None:
         '''
@@ -14,13 +16,10 @@ class Account:
         예를들면 123-12-123456 이다.
         금액은 100 ~ 999 사이로 랜덤하게 입금된다. (단위는 만단위로 암묵적으로 판단한다)
         '''
-        self.BANK_NAME = '비트은행'
-        self.name = ''
-        self.account_number = ''
-        self.money = 0
+        self.main()
 
     def to_string(self):
-        self.name = self.member[self.random(0, len(self.member))]
+        self.name = memberlist[myRandom(0, len(memberlist))]
         self.account_number = self.creat_account_number()
         return f'은행 : {self.BANK_NAME}, ' \
                f'입금자: {self.name},' \
@@ -29,10 +28,10 @@ class Account:
 
 
     def creat_account_number(self):
-        return f'{self.random(100, 1000)}-{self.random(10, 100)}-{self.random(100000, 1000000)}'
+        return f'{myRandom(100, 1000)}-{myRandom(10, 100)}-{myRandom(100000, 1000000)}'
 
     def deposit(self):
-        self.money += self.random(100, 1000)
+        self.money += myRandom(100, 1000)
         print(f'입금액: {self.money} 만원')
 
     @staticmethod
@@ -54,7 +53,7 @@ class Account:
             if menu == '0':
                 break
             if menu == '1':
-                acc = Account(None, None, None)
+                acc = Account.to_string()
                 print(f'{acc.to_string()} ... 개설되었습니다.')
                 ls.append(acc)
             elif menu == '2':

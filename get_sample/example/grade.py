@@ -1,18 +1,22 @@
-from example.utils import myRandom
+from example.utils import my100
 
 
 class Grade:
 
     def __init__(self) -> None:
         # 아래 주석된 부분을 완성합니다.
-        kor = myRandom(0,100)
-        eng = myRandom(0, 100)
-        math = myRandom(0, 100)
+        kor = my100()
+        eng = my100()
+        math = my100()
+        print(f'국어: {kor}, 영어: {eng}, 수학: {math}')
+        
         sum = self.sum(kor, eng, math)
-        avg = self.agv(kor, eng, math)
-        grade = self.getGrade()
-        passChk = self.passChk()
-        return [sum, avg, grade, passChk]
+        avg = self.avg(kor, eng, math)
+        grade = self.grade(kor, eng, math)
+        print(f'총점: {sum}, 평균: {avg}, 학점: {grade}')
+        
+        passChk = self.passChk(kor, eng, math)
+        print(f'결과: {passChk}')
     
     def sum(self, kor, eng, math):
         return kor + eng + math
@@ -35,7 +39,8 @@ class Grade:
             return 'F'
         
     def passChk(self, kor, eng, math):
-        if kor >= 60 and eng >= 60 and math >= 60:
+        grade = self.grade(kor, eng, math)
+        if grade != 'F':
             return '합격'
         else:
             return '불합격'
