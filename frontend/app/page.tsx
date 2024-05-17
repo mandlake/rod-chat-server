@@ -8,6 +8,11 @@ type Inputs = {
   exampleRequired?: string;
 };
 
+const html = [
+  { name: "타이타닉", address: "http://localhost:8000/api/chat/titanic" },
+  { name: "채팅 프로그램", address: "http://localhost:8000/api/chat" },
+];
+
 export default function Home() {
   const [message, setMessage] = useState("How Can I Help You Today ?");
   const {

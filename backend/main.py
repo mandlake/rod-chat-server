@@ -37,7 +37,7 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/chat")
+@app.post("/api/chat")
 def chatting(req:Request):
     print('딕셔너리 내용')
     print(req)
