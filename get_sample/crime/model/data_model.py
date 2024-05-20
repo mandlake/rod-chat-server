@@ -10,8 +10,6 @@ class DataModel:
     _fname : str = ''
     _cctv : str = ''
     _crime : str = ''
-    _id : str = ''
-    _label : str = ''
    
     @property
     def dname(self) -> str : return self._dname
@@ -42,15 +40,3 @@ class DataModel:
 
     @crime.setter
     def crime(self, crime: pd.DataFrame): self._crime = crime
-
-    @property
-    def id(self) -> str: return self._id
-
-    @id.setter
-    def id(self, id: str): self._id = id
-
-    @property
-    def label(self) -> str: return self._label
-
-    @label.setter
-    def label(self,label: str): self._label = label
