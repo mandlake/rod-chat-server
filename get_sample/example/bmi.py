@@ -1,4 +1,5 @@
-from example.utils import myRandom, Member
+from context.model.member_model import Member
+from example.utils import myRandom
 
 
 class BMI():
