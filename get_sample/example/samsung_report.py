@@ -4,13 +4,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from konlpy.tag import Kkma, Komoran, Okt, Hannanum
 import konlpy
-import nltk
 import re
 import pandas as pd
+from nltk.tokenize import word_tokenize
 from nltk import FreqDist
+
 from wordcloud import WordCloud 
 import matplotlib.pyplot as plt
-import icecream as ic
+from icecream import ic
 import tweepy
 
 from context.model.data_model import DataModel
@@ -23,29 +24,62 @@ class SamsungReport:
         self.data = DataModel()
         self.data.dname = './example/data/'
         self.data.fname = 'kr-Report_2018.txt'
-        text = '코드잇에 오신 걸 환영합니다.'
     
-    def preprocessing(self):
+    def preprocessing(self) -> object:
         self.okt.pos('삼성전자 글로벌센터 전자사업부', norm=True, stem=True)
+        
         with open(f'{self.data.dname}{self.data.fname}', 'r', encoding='utf-8') as f:
             texts = f.read()
-        texts = texts.replace('\n', '')
+            
+        texts = texts.replace('\n', ' ')
         tokenizer = re.compile(r'[^ㄱ-힣]+')
-        print(tokenizer.sub(' ', texts))
+        
+        result = tokenizer.sub(' ', texts)
+        return result
     
-    def stopword_embedding(self):
-        pass
+    def noun_embedding(self) -> object:
+        result = self.preprocessing()
+        nouns = []
+        tokens = word_tokenize(result)
+        
+        for token in tokens:
+            pos = self.okt.pos(token)
+            _ = [j[0] for j in pos if j[1] == 'Noun']
+            
+            if len(''.join(_)) > 1:
+                nouns.append(''.join(_))
+                
+        return nouns
     
-    def noun_embedding(self):
-        pass
+    def stopword_embedding(self) -> object:
+        self.okt.pos('삼성전자 글로벌센터 전자사업부', norm=True, stem=True)
+        fname = 'stopwords.txt'
+        with open(f'{self.data.dname}{fname}', 'r', encoding='utf-8') as f:
+            stopwords = f.read()
+        stopwords = stopwords.split(' ')
+        
+        return stopwords
     
-    def morpheme_embedding(self):
-        pass
-
+    def morpheme_embedding(self) -> object:
+        nouns = self.noun_embedding()
+        stopwords = self.stopword_embedding()
+        morphemes = [word for word in nouns if word not in stopwords]
+        
+        return morphemes
+    
+    def draw_wordcloud(self):
+        morphemes = self.morpheme_embedding()
+        freqtext = pd.Series(dict(FreqDist(morphemes))).sort_values(ascending=False)
+        ic(freqtext)
+        wcloud = WordCloud(font_path="./example/data/D2Coding.ttf", relative_scaling=0.2, background_color='white').generate_from_frequencies(freqtext)
+        plt.figure(figsize=(12, 12))
+        plt.imshow(wcloud, interpolation='bilinear')
+        plt.axis('off')
+        plt.show()
 
 if __name__ == '__main__':
     samsung = SamsungReport()
-    samsung.preprocessing()
+    samsung.draw_wordcloud()
     
 
 '''
