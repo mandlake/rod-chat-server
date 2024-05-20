@@ -51,11 +51,9 @@ class CrimeReport:
     
     def save_police_position(self):
         crime = self.service.new_dframe('crime_in_seoul.csv')
-        ic(crime.columns)
         station_names = []
         for name in crime['관서명']:
             station_names.append('서울' + str(name[:-1]) + '경찰서')
-        ic(station_names)
         
         station_address = []
         station_lats = []
@@ -68,20 +66,24 @@ class CrimeReport:
             station_address.append(tmp[0].get("formatted_address"))
             
             tmp_loc = tmp[0].get("geometry")
-            
-            station_address.append(tmp[0].get("formatted_address"))
             station_lats.append(tmp_loc['location']['lat'])
             station_lngs.append(tmp_loc['location']['lng'])
             
-        ic(station_address)
-        ic(station_lats)
-        ic(station_lngs)
-    
-    def preprocessing(self):
-        cctv = self.dframe_cctv()
-        crime = self.dframe_crime()
-        ic(cctv.columns)
-        ic(crime.columns)
+        gu_names = []
+        for name in station_address:
+            tmp = name.split()
+            gu_name = [gu for gu in tmp if gu[-1] == '구'][0]
+            gu_names.append(gu_name)
+        
+        crime['구별'] = gu_names
+        # 구와 경찰서의 위치가 다른 경우 수작업으로 처리
+        crime.loc[crime['관서명'] == '혜화서', ['구별']] = '종로구'
+        crime.loc[crime['관서명'] == '서부서', ['구별']] = '은평구'
+        crime.loc[crime['관서명'] == '강서서', ['구별']] = '양천구'
+        crime.loc[crime['관서명'] == '종암서', ['구별']] = '성북구'
+        crime.loc[crime['관서명'] == '방배서', ['구별']] = '서초구'
+        crime.loc[crime['관서명'] == '수서서', ['구별']] = '강남구'
+        self.service.save_model('police_position.csv', crime)
     
 
 if __name__ == '__main__':
