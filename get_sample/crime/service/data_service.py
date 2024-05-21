@@ -34,6 +34,9 @@ class DataService:
     
     def new_dframe_xls(self, fname: str, header, usecols) -> pd.DataFrame:
         return self.reader.xls(f'{self.data.dname}{fname}', header, usecols)
+    
+    def new_dframe_json(self, fname: str) -> pd.DataFrame:
+        return self.reader.json(f'{self.data.dname}{fname}')
 
     def save_model(self, fname: str, dframe: pd.DataFrame):
         this = self.data
@@ -45,3 +48,7 @@ class DataService:
                          index=False)  # do not write index
         '''
         dframe.to_csv(f'{this.sname}{fname}', sep=',', na_rep='NaN')
+        
+    def save_model_html(self, fname: str, dframe: object):
+        this = self.data
+        dframe.to_html(f'{this.sname}{fname}', sep=',', na_rep='NaN')
