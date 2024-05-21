@@ -1,7 +1,9 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import numpy as np
 from dotenv import load_dotenv
 from konlpy.tag import Kkma, Komoran, Okt, Hannanum
 import konlpy
@@ -43,11 +45,20 @@ class CrimeReport:
         self.crime_columns = ['살인 발생', '강도 발생', '강간 발생', '절도 발생', '폭력 발생']
         self.arrest_columns = ['살인 검거', '강도 검거', '강간 검거', '절도 검거', '폭력 검거']
         
-    def dframe_cctv(self) -> object:
+    def dframe_cctv_idx(self) -> pd.DataFrame:
         return self.service.new_dframe_idx('cctv_in_seoul.csv')
     
-    def dframe_crime(self) -> object:
-        return self.service.new_dframe_idx('crime_in_seoul.csv')
+    def dframe_cctv(self) -> pd.DataFrame:
+        return self.service.new_dframe('cctv_in_seoul.csv')
+    
+    def dframe_crime(self) -> pd.DataFrame:
+        return self.service.new_dframe('crime_in_seoul.csv')
+    
+    def dframe_pop(self) -> pd.DataFrame:
+        return self.service.new_dframe_xls('pop_in_seoul.xls', 2, 'B, D, G, J, N')
+    
+    def drop_na(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.service.drop_na(df)
     
     def save_police_position(self):
         crime = self.service.new_dframe('crime_in_seoul.csv')
@@ -85,7 +96,73 @@ class CrimeReport:
         crime.loc[crime['관서명'] == '수서서', ['구별']] = '강남구'
         self.service.save_model('police_position.csv', crime)
     
+    def save_cctv_pop(self):
+        pop = self.dframe_pop()
+        cctv = self.dframe_cctv()
+        cctv.rename(columns={cctv.columns[0]: '구별'}, inplace=True)
+        pop.rename(columns={pop.columns[0]: '구별',
+                            pop.columns[1]: '인구수', 
+                            pop.columns[2]: '한국인', 
+                            pop.columns[3]: '외국인', 
+                            pop.columns[4]: '고령자'
+                            }, inplace=True)
+        
+        # pop에서 NULL값이 있는지 확인 후 제거
+        pop = self.drop_na(pop)
+        pop['외국인비율'] = pop['외국인'] / pop['인구수'] * 100
+        pop['고령자비율'] = pop['고령자'] / pop['인구수'] * 100
+        cctv.drop(['2013년도 이전', '2014년', '2015년', '2016년'], axis=1, inplace=True)
+
+        # 병합
+        cctv_per_pop = pd.merge(cctv, pop, on='구별')
+        
+        cor1 = np.corrcoef(cctv_per_pop['고령자비율'], cctv_per_pop['소계'])
+        cor2 = np.corrcoef(cctv_per_pop['외국인비율'], cctv_per_pop['소계'])
+        ic(f'고령자비율과 CCTV의 상관계수 {str(cor1)} \n'
+           f'외국인비율과 CCTV의 상관계수 {str(cor2)} ')
+        """
+         고령자비율과 CCTV 의 상관계수 [[ 1.         -0.28078554]
+                                     [-0.28078554  1.        ]] 
+         외국인비율과 CCTV 의 상관계수 [[ 1.         -0.13607433]
+                                     [-0.13607433  1.        ]]
+        r이 -1.0과 -0.7 사이이면, 강한 음적 선형관계,
+        r이 -0.7과 -0.3 사이이면, 뚜렷한 음적 선형관계,
+        r이 -0.3과 -0.1 사이이면, 약한 음적 선형관계,
+        r이 -0.1과 +0.1 사이이면, 거의 무시될 수 있는 선형관계,
+        r이 +0.1과 +0.3 사이이면, 약한 양적 선형관계,
+        r이 +0.3과 +0.7 사이이면, 뚜렷한 양적 선형관계,
+        r이 +0.7과 +1.0 사이이면, 강한 양적 선형관계
+        고령자비율 과 CCTV 상관계수 [[ 1.         -0.28078554] 약한 음적 선형관계
+                                    [-0.28078554  1.        ]]
+        외국인비율 과 CCTV 상관계수 [[ 1.         -0.13607433] 거의 무시될 수 있는
+                                    [-0.13607433  1.        ]]                        
+         """
+        self.service.save_model('cctv_pop.csv', cctv_per_pop)
+    
+    def save_crime_arrest_normalization(self):
+        cctv = self.dframe_cctv()
+        police = self.service.new_dframe_save('police_position.csv')
+        cctv.rename(columns={cctv.columns[0]: '구별'}, inplace=True)
+        
+        cctv.drop(['2013년도 이전', '2014년', '2015년', '2016년'], axis=1, inplace=True)
+        police.drop(['관서명'], axis=1, inplace=True)
+        
+        police['범죄발생총합'] = police[self.crime_columns].sum(axis=1)
+        police.drop(self.crime_columns, axis=1, inplace=True)
+        
+        police['검거총합'] = police[self.arrest_columns].sum(axis=1)
+        police.drop(self.arrest_columns, axis=1, inplace=True)
+
+        cctv_per_crime = pd.merge(cctv, police, on='구별')
+        
+        cor1 = np.corrcoef(cctv_per_crime['검거총합'], cctv_per_crime['소계'])
+        cor2 = np.corrcoef(cctv_per_crime['범죄발생총합'], cctv_per_crime['소계'])
+        ic(f'검거총합과 CCTV의 상관계수 {str(cor1)} \n')
+        ic(f'범죄발생총합과 CCTV의 상관계수 {str(cor2)} ')
+        
+        self.service.save_model('cctv_per_crime.csv', cctv_per_crime)
+
 
 if __name__ == '__main__':
     crime = CrimeReport()
-    crime.save_police_position()
+    crime.save_crime_arrest_normalization()

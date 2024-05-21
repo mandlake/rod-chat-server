@@ -1,5 +1,10 @@
 from abc import *
 
+class EditorBase(metaclass=ABCMeta):
+    @abstractmethod
+    def dropNaN(self):
+        pass
+
 class PrinterBase(metaclass=ABCMeta):
     @abstractmethod
     def print(self):

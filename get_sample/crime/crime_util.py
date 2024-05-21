@@ -1,9 +1,13 @@
 import json
 import pandas as pd
-from crime.crime_abstract import PrinterBase, ReaderBase, ScraperBase
+from crime.crime_abstract import EditorBase, PrinterBase, ReaderBase, ScraperBase
 import googlemaps
 from selenium import webdriver
 from icecream import ic
+
+class Editor(EditorBase):
+    def dropNaN(self, this: pd.DataFrame) -> pd.DataFrame:
+        return this.dropna()
 
 class Printer(PrinterBase):
     def print(self, this: pd.DataFrame):
@@ -18,16 +22,19 @@ class Reader(ReaderBase):
     def __init__(self):
         pass
     
-    def print(self, file) -> object:
+    def print(self, file) -> pd.DataFrame:
         return pd.read_csv(f'{file}', encoding='utf-8', thousands=',')
     
-    def xls(self, file, header, usecols) -> object:
+    def print_idx(self, file) -> pd.DataFrame:
+        return pd.read_csv(f'{file}', index_col=0, encoding='utf-8', thousands=',')
+    
+    def xls(self, file, header, usecols) -> pd.DataFrame:
         return pd.read_excel(f'{file}', header=header, usecols=usecols)
     
-    def json(self, file) -> object:
+    def json(self, file) -> pd.DataFrame:
         return json.load(open(f'{file}', encoding='utf-8'))
     
-    def gmaps(self, key) -> object:
+    def gmaps(self, key) -> pd.DataFrame:
         return googlemaps.Client(key=f'{key}')
 
 
